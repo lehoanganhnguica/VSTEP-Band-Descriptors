@@ -22,14 +22,15 @@
   body.explorer-locked{height:100dvh;overflow:hidden}
   body.explorer-locked .wrap{height:100dvh;overflow:hidden}
   .wrap{width:100%;max-width:none;margin:0;padding:8px clamp(10px,1.4vw,22px) 16px}
-  header.app{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:9px;flex-wrap:nowrap;margin:0 -2px 6px;padding:5px 2px;background:rgba(248,251,255,.94);border-bottom:1px solid rgba(203,214,230,.72);backdrop-filter:blur(10px)}
-  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff;box-shadow:var(--shadow)}
-  h1{font-size:18px;line-height:1.08;margin:0}
+  header.app{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:7px;flex-wrap:nowrap;margin:0 -2px 6px;padding:5px 2px;background:rgba(248,251,255,.94);border-bottom:1px solid rgba(203,214,230,.72);backdrop-filter:blur(10px)}
+  header.app>.logo+div{flex:0 1 264px;min-width:178px;overflow:hidden}
+  .logo{flex:0 0 32px;width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff;box-shadow:var(--shadow)}
+  h1{font-size:clamp(15px,1.35vw,18px);line-height:1.08;margin:0;white-space:nowrap}
   h3{font-size:18px;line-height:1.25}
-  .sub{color:var(--muted);font-size:11px;margin-top:0;max-width:620px;line-height:1.15}
-  .tabs{margin-left:0;display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px;box-shadow:var(--shadow);flex:0 0 auto}
+  .sub{color:var(--muted);font-size:10.5px;margin-top:0;max-width:100%;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tabs{margin-left:0;display:flex;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px;box-shadow:var(--shadow);flex:0 0 auto}
   .control-drawer.hide + .tabs{margin-left:auto}
-  .tab{border:none;background:transparent;color:var(--ink);font:inherit;font-size:12px;font-weight:800;padding:6px 13px;border-radius:999px;cursor:pointer;min-height:30px}
+  .tab{border:none;background:transparent;color:var(--ink);font:inherit;font-size:11.5px;font-weight:800;padding:6px 10px;border-radius:999px;cursor:pointer;min-height:30px;white-space:nowrap}
   .tab.active{background:var(--brand);color:#fff}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-top:16px}
   .row{display:flex;gap:12px 14px;flex-wrap:wrap;align-items:flex-end}
@@ -53,27 +54,47 @@
   .sw.y{background:var(--hl-yellow)} .sw.g{background:var(--hl-green)} .sw.p{background:var(--hl-pink)} .sw.b{background:var(--hl-blue)}
   .explorer-shell{display:block}
   .explorer-main{min-width:0}
-  .control-drawer{flex:1 1 auto;min-width:0;margin-left:auto;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .control-drawer{flex:1 1 auto;min-width:0;margin-left:auto;overflow:visible}
   .control-drawer::-webkit-scrollbar{display:none}
-  .drawer-body{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:max-content}
+  .drawer-body{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;width:100%}
   .control-drawer label.fld{position:relative;min-width:0;width:auto;font-size:0}
   .control-drawer label.fld::before{display:none}
   .control-drawer label.fld:first-of-type::before{content:"Scale"}
   .control-drawer label.fld:nth-of-type(2)::before{content:"Criterion"}
-  .control-drawer select{width:110px;min-height:30px;padding:5px 8px;font-size:12px;border-radius:8px}
-  .control-drawer #section{width:128px}
-  .control-drawer #focusCrit{width:132px}
-  .control-switches{display:flex;align-items:center;gap:5px;margin-left:2px}
-  .control-drawer .switch{justify-content:flex-start;gap:4px;min-height:30px;font-size:11.5px;white-space:nowrap}
-  .control-drawer .knob{width:29px;height:17px}
-  .control-drawer .knob::after{width:13px;height:13px}
-  .control-drawer .switch input:checked + .knob::after{transform:translateX(12px)}
-  .control-drawer .swatches{justify-content:flex-start;flex-wrap:nowrap;gap:4px;margin-left:1px}
-  .control-drawer .sw{width:20px;height:20px;border-radius:6px}
-  .drawer-body .btn{width:auto;min-height:30px;padding:5px 9px;font-size:12px;border-radius:8px;text-align:center}
-  .size-control{display:flex;align-items:center;gap:5px;min-height:30px;color:var(--muted);font-size:11.5px;font-weight:800;white-space:nowrap}
-  .size-control input{width:86px;accent-color:var(--brand)}
-  .size-control output{min-width:26px;text-align:right;color:#30415f;font-size:11px;font-weight:900}
+  .control-drawer select{width:98px;min-height:30px;padding:5px 6px;font-size:11.5px;border-radius:8px}
+  .control-drawer #section{width:108px}
+  .control-drawer #focusCrit{width:112px}
+  .control-switches{display:flex;align-items:center;gap:4px;margin-left:0;min-width:0}
+  .control-drawer .switch{justify-content:flex-start;gap:3px;min-height:30px;font-size:10.5px;white-space:nowrap}
+  .switch-text{white-space:nowrap}
+  .control-drawer .knob{flex:0 0 27px;width:27px;height:16px}
+  .control-drawer .knob::after{width:12px;height:12px}
+  .control-drawer .switch input:checked + .knob::after{transform:translateX(11px)}
+  .control-drawer .swatches{flex:0 0 auto;justify-content:flex-start;flex-wrap:nowrap;gap:3px;margin-left:0}
+  .control-drawer .sw{width:18px;height:18px;border-radius:5px}
+  .drawer-body .btn{flex:0 0 auto;width:auto;min-height:30px;padding:5px 8px;font-size:11.5px;border-radius:8px;text-align:center}
+  .size-control{flex:0 1 120px;display:flex;align-items:center;gap:4px;min-width:92px;min-height:30px;color:var(--muted);font-size:10.5px;font-weight:800;white-space:nowrap}
+  .size-control input{min-width:42px;width:58px;accent-color:var(--brand)}
+  .size-control output{min-width:23px;text-align:right;color:#30415f;font-size:10.5px;font-weight:900}
+  @media(max-width:1120px) and (min-width:761px){
+    header.app>.logo+div{flex-basis:205px;min-width:150px}
+    .sub{display:none}
+    .size-control{flex-basis:72px;min-width:72px;font-size:0}
+    .size-control input{width:46px}
+    .size-control output{min-width:21px;font-size:10px}
+    .control-drawer #section{width:96px}
+    .control-drawer #focusCrit{width:100px}
+    .control-drawer .switch{font-size:9.5px}
+    .control-drawer .sw{width:16px;height:16px}
+    .drawer-body .btn{padding-inline:6px}
+    .tab{font-size:11px;padding-inline:8px}
+  }
+  @media(max-width:900px) and (min-width:761px){
+    header.app{flex-wrap:wrap}
+    header.app>.logo+div{flex:1 1 auto}
+    .control-drawer{order:5;flex:1 1 100%;width:100%;margin-left:0}
+    .drawer-body{justify-content:flex-end;flex-wrap:nowrap}
+  }
   .rubric-reference{position:sticky;top:var(--reference-top);z-index:30;margin:5px 0 5px;padding:6px 9px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
   .diff-legend{display:flex;gap:8px 12px;flex-wrap:nowrap;align-items:center;margin:0;font-size:11.5px;color:var(--muted)}
   .diff-keys{display:flex;flex:1 1 auto;gap:6px 10px;align-items:center;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -325,8 +346,8 @@
           <select id="focusCrit"></select>
         </label>
         <div class="control-switches">
-          <label class="switch"><input type="checkbox" id="diffToggle" checked><span class="knob"></span> Automatic highlights</label>
-          <label class="switch"><input type="checkbox" id="markerToggle"><span class="knob"></span> Manual highlights</label>
+          <label class="switch" title="Automatic highlights"><input type="checkbox" id="diffToggle" checked><span class="knob"></span><span class="switch-text">Auto</span></label>
+          <label class="switch" title="Manual highlights"><input type="checkbox" id="markerToggle"><span class="knob"></span><span class="switch-text">Manual</span></label>
         </div>
         <div class="swatches" id="swatches">
           <div class="sw y active" data-c="y" title="Yellow"></div>
