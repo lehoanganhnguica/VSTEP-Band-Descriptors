@@ -94,6 +94,12 @@
   .search-nav{display:grid;place-items:center;flex:0 0 28px;height:100%;border:0;border-left:1px solid var(--line);background:#f7f9fd;color:#30415f;font:inherit;font-size:15px;font-weight:900;line-height:1;cursor:pointer}
   .search-nav:hover:not(:disabled),.search-nav:focus-visible{background:var(--chip);color:var(--brand);outline:0}
   .search-nav:disabled{color:#aab4c5;cursor:default}
+  .browse-score{display:flex;align-items:center;gap:5px;flex:0 0 auto;min-width:0;height:30px;padding:3px 5px 3px 8px;border:1px solid var(--lvl-border,var(--line));border-radius:8px;background:var(--lvl-bg,#f7f9fd);color:var(--lvl-ink,#30415f);white-space:nowrap}
+  .browse-score-label{font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.3px}
+  .browse-score strong{font-size:12px;line-height:1}
+  .browse-score-level{max-width:150px;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;font-weight:800}
+  .browse-score-reset{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;padding:0;border:0;border-radius:5px;background:rgba(255,255,255,.72);color:inherit;font:inherit;font-size:14px;font-weight:900;line-height:1;cursor:pointer}
+  .browse-score-reset:hover,.browse-score-reset:focus-visible{background:#fff;outline:2px solid var(--lvl-border,var(--line));outline-offset:1px}
   ::highlight(descriptor-search){background:#ffe36a;text-decoration:underline;text-decoration-color:#b98200;text-decoration-thickness:2px}
   ::highlight(descriptor-search-current){background:#ffad32;color:#111827;text-decoration:underline;text-decoration-color:#7d4a00;text-decoration-thickness:2px}
   .descriptor-cell.search-match-cell{background:#fffbea}
@@ -155,14 +161,19 @@
   .band-b1{--lvl-bg:#fff4cf;--lvl-border:#ddb64a;--lvl-ink:#76510a;--lvl-solid:#ca8a04;--lvl-shadow:rgba(202,138,4,.34)}
   .band-b2{--lvl-bg:#dff6e8;--lvl-border:#64bf82;--lvl-ink:#17633a;--lvl-solid:#16834a;--lvl-shadow:rgba(22,131,74,.34)}
   .band-c1{--lvl-bg:#dbeafe;--lvl-border:#78a7ef;--lvl-ink:#1d4ed8;--lvl-solid:#2459d6;--lvl-shadow:rgba(36,89,214,.34)}
-  .matrix-crit{position:sticky;left:0;z-index:4;background:#f0f5fd;padding:14px 10px;display:flex;align-items:flex-start;min-width:0;max-width:var(--criterion-col);overflow:hidden;overflow-wrap:anywhere;word-break:normal;hyphens:auto;font-size:13px;font-weight:900;line-height:1.25;color:#30415f}
+  .matrix-crit{position:sticky;left:0;z-index:4;background:#f0f5fd;padding:14px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0;max-width:var(--criterion-col);overflow:hidden;overflow-wrap:anywhere;word-break:normal;hyphens:auto;font-size:13px;font-weight:900;line-height:1.25;color:#30415f}
+  .crit-name{min-width:0}
+  .crit-score{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;margin-top:-3px;border-radius:7px;background:var(--lvl-solid,var(--brand));color:#fff;font-size:12px;font-weight:950;box-shadow:0 2px 7px var(--lvl-shadow,rgba(36,89,214,.25))}
   .descriptor-cell{--desc-font:var(--descriptor-font);position:relative;background:var(--panel);padding:13px 15px;min-height:118px;transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease,background .16s ease;transform-origin:center}
   .descriptor-cell ul{margin:0;padding-left:18px}
   .descriptor-cell li{margin:6px 0;font-size:var(--desc-font);line-height:1.58;transition:font-size .16s ease}
+  .scale:not(.marking) .descriptor-cell.scoreable{cursor:pointer}
+  .descriptor-cell.score-selected{background:var(--lvl-bg);box-shadow:inset 0 0 0 3px var(--lvl-solid);z-index:3}
   /* hover zoom: one descriptor cell at a time */
   .scale.zoom .descriptor-cell:hover{transform:scale(1.035);box-shadow:0 16px 36px rgba(40,60,110,.20);z-index:8;background:#fff}
+  .scale.zoom .descriptor-cell.score-selected:hover{background:var(--lvl-bg);box-shadow:inset 0 0 0 3px var(--lvl-solid),0 16px 36px rgba(40,60,110,.20)}
   .scale.zoom .descriptor-cell:hover li{font-size:calc(var(--desc-font) + 1.25px)}
-  .scale.zoom .scale-matrix:hover .descriptor-cell:not(:hover):not(.peek){opacity:.62}
+  .scale.zoom .scale-matrix:hover .descriptor-cell:not(:hover):not(.peek):not(.score-selected){opacity:.62}
   .descriptor-cell.peek{background:#eef5ff;box-shadow:inset 0 0 0 2px rgba(36,89,214,.28);z-index:3}
   .descriptor-cell.flash,.matrix-crit.flash,.matrix-band.flash{animation:fl 1s ease}
   @keyframes fl{0%,100%{box-shadow:0 0 0 0 rgba(47,107,255,0)}30%{box-shadow:0 0 0 4px rgba(47,107,255,.45)}}
@@ -248,10 +259,14 @@
     .diff-keys{gap:8px}
     .diff-key{white-space:nowrap;flex:0 0 auto}
     .diff-chip{width:16px;height:16px}
-    .descriptor-search{flex-basis:190px}
+    .descriptor-search{flex-basis:155px}
     .descriptor-search input{font-size:11.5px}
     .search-count{min-width:33px;padding:0 3px;font-size:10px}
     .search-nav{flex-basis:25px}
+    .browse-score{max-width:140px;padding-left:6px}
+    .browse-score-label{display:none}
+    .browse-score-level{max-width:78px;font-size:10px}
+    .browse-score-reset{flex-basis:19px;width:19px;height:19px}
     .summary-panel{margin-top:0;padding-top:0}
     .summary-head{align-items:center;margin-bottom:3px}
     .summary-title{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.75px}
@@ -517,6 +532,9 @@ let summaryCollapsed=false;
 let descriptorSearchQuery="";
 let descriptorSearchIndex=-1;
 let descriptorSearchMatches=[];
+const explorerScores=Object.fromEntries(ALL.map(sec=>[
+  sec,Object.fromEntries(crits(sec).map(criterion=>[criterion,null]))
+]));
 const keyOf=(sec,c,b,i)=>`${sec}|${c}|${b}|${i}`;
 
 $("#section").innerHTML=ALL.map(s=>`<option>${s}</option>`).join("");
@@ -556,6 +574,7 @@ $("#summaryPanel").onclick=e=>{
   }
   const bandBtn=e.target.closest("[data-summary-band]");
   if(bandBtn){
+    setExplorerScore("Speaking",activeSummaryCriterion(),+bandBtn.dataset.summaryBand);
     jumpToBand(+bandBtn.dataset.summaryBand);
     return;
   }
@@ -769,6 +788,107 @@ function bulletHTML(key,text){
   const inner = (key in HL)? HL[key] : diffHTML(text);
   return `<li><span class="btxt" data-key="${key}">${inner}</span></li>`;
 }
+function compactScoreLevel(score){
+  if(score<4)return {label:"Unrated",cls:"band-unrated"};
+  if(score<=5.5)return {label:"B1 / L3",cls:"band-b1"};
+  if(score<=8)return {label:"B2 / L4",cls:"band-b2"};
+  return {label:"C1 / L5",cls:"band-c1"};
+}
+function selectedScores(sec){
+  const state=explorerScores[sec];
+  return crits(sec).map(criterion=>state[criterion]);
+}
+function writingExplorerResult(){
+  const task1=selectedScores("Writing Task 1");
+  const task2=selectedScores("Writing Task 2");
+  if(task1.some(v=>v===null)||task2.some(v=>v===null))return null;
+  const task1Raw=avg(task1);
+  const task2Raw=avg(task2);
+  const raw=(task1Raw+2*task2Raw)/3;
+  return {task1Raw,task2Raw,raw,band:round5(raw)};
+}
+function explorerScoreStatus(sec){
+  const values=selectedScores(sec);
+  const chosen=values.filter(v=>v!==null);
+  const complete=chosen.length===values.length;
+  const short=sec==="Speaking"?"S":sec==="Writing Task 1"?"T1":"T2";
+  if(!chosen.length){
+    return {cls:"band-unrated",label:short,main:`0/${values.length}`,detail:"Select bands",title:`No ${sec} criterion scores selected.`};
+  }
+  const currentAvg=avg(chosen);
+  if(sec==="Speaking"&&complete){
+    const rawTotal=sum(values);
+    const raw=rawTotal/values.length;
+    const rawLevel=speakingRawLevel(rawTotal);
+    const band=clamp(round5(raw),rawLevel.minBand,rawLevel.maxBand);
+    const level=compactScoreLevel(band);
+    return {
+      cls:level.cls,label:"Speaking",main:`${rawTotal}/50`,detail:`${fmt(band)} · ${level.label}`,
+      title:`Speaking total ${rawTotal}/50. Converted score ${fmt(band)}. ${level.label}.`
+    };
+  }
+  if(sec!=="Speaking"&&complete){
+    const taskTotal=sum(values);
+    const taskRaw=avg(values);
+    const writing=writingExplorerResult();
+    if(writing){
+      const level=compactScoreLevel(writing.band);
+      return {
+        cls:level.cls,label:"Writing",main:`${taskTotal}/40`,detail:`W ${fmt(writing.band)} · ${level.label}`,
+        title:`${sec} total ${taskTotal}/40. Task 1 average ${writing.task1Raw.toFixed(2)}, Task 2 average ${writing.task2Raw.toFixed(2)}. Weighted Writing score ${fmt(writing.band)}. ${level.label}.`
+      };
+    }
+    return {
+      cls:compactScoreLevel(taskRaw).cls,label:short,main:`${taskTotal}/40`,detail:`Avg ${taskRaw.toFixed(2)} · ${sec==="Writing Task 1"?"T2":"T1"} pending`,
+      title:`${sec} total ${taskTotal}/40, average ${taskRaw.toFixed(2)}. Complete the other Writing task for the weighted Writing score and level.`
+    };
+  }
+  return {
+    cls:compactScoreLevel(currentAvg).cls,label:short,main:`${chosen.length}/${values.length}`,
+    detail:`Avg ${currentAvg.toFixed(1)}`,
+    title:`${chosen.length} of ${values.length} ${sec} criteria selected. Current selected-criterion average ${currentAvg.toFixed(2)}.`
+  };
+}
+function explorerScoreHTML(sec){
+  const result=explorerScoreStatus(sec);
+  const hasScores=selectedScores(sec).some(v=>v!==null);
+  return `<div class="browse-score ${result.cls}" id="browseScore" aria-live="polite" title="${esc(result.title)}">
+    <span class="browse-score-label">${esc(result.label)}</span>
+    <strong>${esc(result.main)}</strong>
+    <span class="browse-score-level">${esc(result.detail)}</span>
+    ${hasScores?'<button class="browse-score-reset" id="browseScoreReset" type="button" title="Clear scores for this section" aria-label="Clear scores for this section">×</button>':""}
+  </div>`;
+}
+function refreshExplorerScoreUI(){
+  const sec=$("#section").value;
+  const state=explorerScores[sec];
+  $$("#scale .descriptor-cell[data-criterion]").forEach(cell=>{
+    const selected=state[cell.dataset.criterion]===+cell.dataset.band;
+    cell.classList.toggle("score-selected",selected);
+    cell.setAttribute("aria-pressed",String(selected));
+  });
+  $$("#scale .matrix-crit[data-criterion]").forEach(label=>{
+    const value=state[label.dataset.criterion];
+    const badge=label.querySelector(".crit-score");
+    if(badge){
+      badge.textContent=value===null?"":String(value);
+      badge.classList.toggle("hide",value===null);
+      badge.className=`crit-score ${value===null?"hide":bandClass(value)}`;
+    }
+  });
+  const old=$("#browseScore");
+  if(old)old.outerHTML=explorerScoreHTML(sec);
+}
+function setExplorerScore(sec,criterion,band){
+  const state=explorerScores[sec];
+  if(!state||!(criterion in state))return;
+  state[criterion]=state[criterion]===band?null:band;
+  refreshExplorerScoreUI();
+}
+function clearExplorerScores(sec){
+  Object.keys(explorerScores[sec]).forEach(criterion=>explorerScores[sec][criterion]=null);
+  refreshExplorerScoreUI();
+}
 function clearDescriptorSearchVisuals(){
   if(globalThis.CSS?.highlights){
     CSS.highlights.delete("descriptor-search");
@@ -872,6 +992,7 @@ function applyDescriptorSearch({keepIndex=false}={}){
 }
 function searchLegendHTML(hidden){
   return `<div class="diff-keys ${hidden?"hide":""}">${diffLegendHTML()}</div>
+    ${explorerScoreHTML($("#section").value)}
     <div class="descriptor-search" role="search">
       <input id="descriptorSearch" type="search" placeholder="Search descriptors" aria-label="Search descriptors" autocomplete="off" spellcheck="false">
       <output class="search-count" id="descriptorSearchCount" aria-live="polite"></output>
@@ -885,12 +1006,14 @@ function renderScale(){
   const header=`<div class="matrix-corner">Criterion</div>`+
     BANDS.map(b=>`<button class="matrix-band ${bandClass(b)}" id="band-${b}" data-band="${b}" type="button" title="${bandTitle(b)}" aria-label="${bandTitle(b)}">Band ${b}</button>`).join("");
   const rows=cs.map(c=>{
+    const selectedBand=explorerScores[sec][c];
     const cells=BANDS.map(b=>{
       const bs=bullets(sec,c,b);
       const lis = bs.length? bs.map((t,i)=>bulletHTML(keyOf(sec,c,b,i),t)).join("") : '<li class="muted">—</li>';
-      return `<div class="descriptor-cell" data-band="${b}" data-row-criterion="${esc(c)}"><ul>${lis}</ul></div>`;
+      const selected=selectedBand===b;
+      return `<div class="descriptor-cell scoreable ${bandClass(b)} ${selected?"score-selected":""}" data-band="${b}" data-criterion="${esc(c)}" data-row-criterion="${esc(c)}" role="button" tabindex="0" aria-label="Set ${esc(c)} score to Band ${b}" aria-pressed="${selected}"><ul>${lis}</ul></div>`;
     }).join("");
-    return `<div class="matrix-crit" data-criterion="${esc(c)}" data-row-criterion="${esc(c)}">${c}</div>${cells}`;
+    return `<div class="matrix-crit" data-criterion="${esc(c)}" data-row-criterion="${esc(c)}"><span class="crit-name">${c}</span><span class="crit-score ${selectedBand===null?"hide":bandClass(selectedBand)}">${selectedBand===null?"":selectedBand}</span></div>${cells}`;
   }).join("");
   const legendHidden=!$("#diffToggle").checked;
   $("#scale").innerHTML=`<div class="scale-sticky ${legendHidden?"legend-hidden":""}" id="scaleSticky">
@@ -925,6 +1048,8 @@ function renderScale(){
 const markerOn=()=>$("#markerToggle").checked;
 const colorCls=()=>"c-"+markColor;
 let justDragged=false;
+let scorePointerStart=null;
+let scoreWasDrag=false;
 function saveBullet(btxt){
   const key=btxt.dataset.key;
   if(btxt.querySelector("mark.hl")) HL[key]=btxt.innerHTML;
@@ -936,7 +1061,11 @@ function saveBullet(btxt){
 function flatten(mk){ mk.querySelectorAll("mark.hl").forEach(inner=>{const p=inner.parentNode;while(inner.firstChild)p.insertBefore(inner.firstChild,inner);p.removeChild(inner);}); }
 function unwrap(mk){const p=mk.parentNode;while(mk.firstChild)p.insertBefore(mk.firstChild,mk);p.removeChild(mk);}
 
-$("#scale").addEventListener("mousedown",()=>{justDragged=false;});
+$("#scale").addEventListener("mousedown",e=>{
+  justDragged=false;
+  scoreWasDrag=false;
+  scorePointerStart=!markerOn()&&e.target.closest(".descriptor-cell[data-criterion]")?{x:e.clientX,y:e.clientY}:null;
+});
 $("#scale").addEventListener("input",e=>{
   if(e.target.id!=="descriptorSearch")return;
   descriptorSearchQuery=e.target.value;
@@ -956,6 +1085,10 @@ $("#scale").addEventListener("keydown",e=>{
   }
 });
 $("#scale").addEventListener("click",e=>{
+  if(e.target.closest("#browseScoreReset")){
+    clearExplorerScores($("#section").value);
+    return;
+  }
   if(e.target.closest("#descriptorSearchPrev")){
     showDescriptorSearchMatch(descriptorSearchIndex-1,{scroll:true});
     return;
@@ -964,8 +1097,30 @@ $("#scale").addEventListener("click",e=>{
     showDescriptorSearchMatch(descriptorSearchIndex+1,{scroll:true});
   }
 });
+$("#scale").addEventListener("click",e=>{
+  if(markerOn())return;
+  const cell=e.target.closest(".descriptor-cell[data-criterion]");
+  if(!cell)return;
+  if(scoreWasDrag){
+    scoreWasDrag=false;
+    scorePointerStart=null;
+    return;
+  }
+  scorePointerStart=null;
+  setExplorerScore($("#section").value,cell.dataset.criterion,+cell.dataset.band);
+});
+$("#scale").addEventListener("keydown",e=>{
+  if(markerOn()||!["Enter"," "].includes(e.key))return;
+  const cell=e.target.closest(".descriptor-cell[data-criterion]");
+  if(!cell)return;
+  e.preventDefault();
+  setExplorerScore($("#section").value,cell.dataset.criterion,+cell.dataset.band);
+});
 // defer to the next tick so the browser has finished committing the selection
-$("#scale").addEventListener("mouseup",()=>{ if(markerOn()) setTimeout(applySelection,0); });
+$("#scale").addEventListener("mouseup",e=>{
+  if(scorePointerStart)scoreWasDrag=Math.hypot(e.clientX-scorePointerStart.x,e.clientY-scorePointerStart.y)>8;
+  if(markerOn())setTimeout(applySelection,0);
+});
 function applySelection(){
   const sel=window.getSelection();
   if(!sel||sel.isCollapsed||!sel.rangeCount)return;
