@@ -73,6 +73,9 @@
   .control-drawer .swatches{flex:0 0 auto;justify-content:flex-start;flex-wrap:nowrap;gap:3px;margin-left:0}
   .control-drawer .sw{width:18px;height:18px;border-radius:5px}
   .drawer-body .btn{flex:0 0 auto;width:auto;min-height:30px;padding:5px 8px;font-size:11.5px;border-radius:8px;text-align:center}
+  .drawer-body .btn.new-session{border-color:#e2a7ae;color:#a51f31;background:#fff8f9}
+  .drawer-body .btn.new-session:hover,.drawer-body .btn.new-session:focus-visible{background:#ffe9ec;border-color:#cf5968;color:#8f1727}
+  .short-action-label{display:none}
   .size-control{flex:0 1 120px;display:flex;align-items:center;gap:4px;min-width:92px;min-height:30px;color:var(--muted);font-size:10.5px;font-weight:800;white-space:nowrap}
   .size-control input{min-width:42px;width:58px;accent-color:var(--brand)}
   .size-control output{min-width:23px;text-align:right;color:#30415f;font-size:10.5px;font-weight:900}
@@ -87,6 +90,8 @@
     .control-drawer .switch{font-size:9.5px}
     .control-drawer .sw{width:16px;height:16px}
     .drawer-body .btn{padding-inline:6px}
+    .wide-action-label{display:none}
+    .short-action-label{display:inline}
     .tab{font-size:11px;padding-inline:8px}
   }
   @media(max-width:900px) and (min-width:761px){
@@ -368,7 +373,8 @@
           <div class="sw p" data-c="p" title="Pink"></div>
           <div class="sw b" data-c="b" title="Blue"></div>
         </div>
-        <button class="btn ghost sm" id="clearMarks" type="button">Clear</button>
+        <button class="btn ghost sm" id="clearMarks" type="button" title="Clear manual highlights">Clear ink</button>
+        <button class="btn ghost sm new-session" id="newSession" type="button" title="Clear all progress and start a new marking session"><span class="wide-action-label">New session</span><span class="short-action-label">New</span></button>
       </div>
     </div>
     <div class="tabs">
@@ -546,6 +552,69 @@ const DIFF_GROUPS=[
   ]}
 ];
 const diffLegendHTML=()=>DIFF_GROUPS.map(g=>`<span class="diff-key"><span class="diff-chip ${g.cls}"></span>${g.label}</span>`).join("");
+const PROGRESS_STORAGE_KEY="vstep-app-progress-v1";
+const SAVED_PROGRESS=(()=>{
+  try{
+    const saved=JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY)||"{}");
+    return saved&&typeof saved==="object"?saved:{};
+  }catch{return {};}
+})();
+const savedBand=(value,fallback,{whole=false}={})=>{
+  if(value===null||value==="")return fallback;
+  const number=Number(value);
+  if(!Number.isFinite(number)||number<0||number>10)return fallback;
+  return whole?Math.round(number):Math.round(number*2)/2;
+};
+let progressSaveTimer=null;
+let suppressProgressSave=false;
+function persistAppProgress(){
+  if(suppressProgressSave)return;
+  if(progressSaveTimer){
+    clearTimeout(progressSaveTimer);
+    progressSaveTimer=null;
+  }
+  try{
+    localStorage.setItem(PROGRESS_STORAGE_KEY,JSON.stringify({
+      version:1,
+      savedAt:new Date().toISOString(),
+      activeTab:document.querySelector(".tab.active")?.dataset.tab||"explorer",
+      section:$("#section")?.value||"Speaking",
+      focusCrit:$("#focusCrit")?.value||"__all",
+      summaryCrit,
+      summaryCollapsed,
+      descriptorFont:Number($("#textSize")?.value||14.5),
+      diffToggle:!!$("#diffToggle")?.checked,
+      markerToggle:!!$("#markerToggle")?.checked,
+      markColor,
+      explorerScores,
+      highlights:HL,
+      calculator:{
+        skillVal,
+        prodState,
+        prodSkill:$("#prodSkill")?.value||"Speaking"
+      }
+    }));
+  }catch{}
+}
+function queueProgressSave(){
+  if(suppressProgressSave)return;
+  if(progressSaveTimer)clearTimeout(progressSaveTimer);
+  progressSaveTimer=setTimeout(persistAppProgress,120);
+}
+function startNewMarkingSession(){
+  const confirmed=window.confirm("Start a new marking session?\n\nThis will permanently clear all selected band scores, quick notes, highlights, and calculator values saved in this browser.");
+  if(!confirmed)return;
+  suppressProgressSave=true;
+  if(progressSaveTimer){
+    clearTimeout(progressSaveTimer);
+    progressSaveTimer=null;
+  }
+  try{
+    localStorage.removeItem(PROGRESS_STORAGE_KEY);
+    localStorage.removeItem(NOTE_STORAGE_KEY);
+  }catch{}
+  window.location.reload();
+}
 
 /* ===== tabs ===== */
 $$(".tab").forEach(t=>t.onclick=()=>{
@@ -556,20 +625,25 @@ $$(".tab").forEach(t=>t.onclick=()=>{
   $("#controlDrawer").classList.toggle("hide",!explorerActive);
   document.body.classList.toggle("explorer-locked",explorerActive);
   requestAnimationFrame(updateStickyOffsets);
+  queueProgressSave();
 });
 document.body.classList.add("explorer-locked");
 
 /* ===== EXPLORER ===== */
-const HL={};                  // key -> innerHTML (with marks)
-let markColor="y";
-let summaryCrit=DATA.speaking_short[0];
-let summaryCollapsed=false;
+const HL=Object.fromEntries(Object.entries(SAVED_PROGRESS.highlights||{}).filter(([,value])=>typeof value==="string")); // key -> innerHTML (with marks)
+let markColor=["y","g","p","b"].includes(SAVED_PROGRESS.markColor)?SAVED_PROGRESS.markColor:"y";
+let summaryCrit=DATA.speaking_short.includes(SAVED_PROGRESS.summaryCrit)?SAVED_PROGRESS.summaryCrit:DATA.speaking_short[0];
+let summaryCollapsed=!!SAVED_PROGRESS.summaryCollapsed;
 let descriptorSearchQuery="";
 let descriptorSearchIndex=-1;
 let descriptorSearchMatches=[];
 const explorerScores=Object.fromEntries(ALL.map(sec=>[
   sec,Object.fromEntries(crits(sec).map(criterion=>[criterion,null]))
 ]));
+ALL.forEach(sec=>crits(sec).forEach(criterion=>{
+  const saved=SAVED_PROGRESS.explorerScores?.[sec]?.[criterion];
+  if(saved===null||(Number.isInteger(saved)&&saved>=0&&saved<=10))explorerScores[sec][criterion]=saved;
+}));
 const keyOf=(sec,c,b,i)=>`${sec}|${c}|${b}|${i}`;
 const NOTE_STORAGE_KEY="vstep-band-cell-notes-v1";
 const CELL_NOTES=(()=>{
@@ -672,8 +746,9 @@ function deleteActiveCellNote(){
 }
 
 $("#section").innerHTML=ALL.map(s=>`<option>${s}</option>`).join("");
-$("#section").onchange=()=>{refreshFocus();renderSpeakingSummary();renderScale();};
-$("#focusCrit").onchange=()=>{renderSpeakingSummary();renderScale();};
+if(ALL.includes(SAVED_PROGRESS.section))$("#section").value=SAVED_PROGRESS.section;
+$("#section").onchange=()=>{refreshFocus();renderSpeakingSummary();renderScale();queueProgressSave();};
+$("#focusCrit").onchange=()=>{renderSpeakingSummary();renderScale();queueProgressSave();};
 function syncHighlightMode({render=true}={}){
   $("#scale").classList.toggle("marking",$("#markerToggle").checked);
   syncDiffLegend();
@@ -682,6 +757,7 @@ function syncHighlightMode({render=true}={}){
 $("#diffToggle").onchange=e=>{
   if(e.target.checked)$("#markerToggle").checked=false;
   syncHighlightMode();
+  queueProgressSave();
 };
 const textSize=$("#textSize");
 const textSizeVal=$("#textSizeVal");
@@ -691,19 +767,30 @@ function setDescriptorFontSize(value){
   document.documentElement.style.setProperty("--descriptor-font",`${size}px`);
   if(textSizeVal)textSizeVal.textContent=Number.isInteger(size)?String(size):size.toFixed(1);
 }
-textSize?.addEventListener("input",e=>setDescriptorFontSize(e.target.value));
+if(Number.isFinite(Number(SAVED_PROGRESS.descriptorFont)))textSize.value=String(Math.max(12,Math.min(18,Number(SAVED_PROGRESS.descriptorFont))));
+textSize?.addEventListener("input",e=>{setDescriptorFontSize(e.target.value);queueProgressSave();});
 setDescriptorFontSize(textSize?.value||14.5);
+if(SAVED_PROGRESS.markerToggle===true){
+  $("#markerToggle").checked=true;
+  $("#diffToggle").checked=false;
+}else if(typeof SAVED_PROGRESS.diffToggle==="boolean"){
+  $("#diffToggle").checked=SAVED_PROGRESS.diffToggle;
+}
 $("#markerToggle").onchange=e=>{
   if(e.target.checked)$("#diffToggle").checked=false;
   syncHighlightMode();
+  queueProgressSave();
 };
-$("#swatches").onclick=e=>{const sw=e.target.closest(".sw");if(!sw)return;markColor=sw.dataset.c;$$(".sw").forEach(x=>x.classList.toggle("active",x===sw));};
-$("#clearMarks").onclick=()=>{for(const k in HL)delete HL[k];renderScale();};
+$$(".sw").forEach(sw=>sw.classList.toggle("active",sw.dataset.c===markColor));
+$("#swatches").onclick=e=>{const sw=e.target.closest(".sw");if(!sw)return;markColor=sw.dataset.c;$$(".sw").forEach(x=>x.classList.toggle("active",x===sw));queueProgressSave();};
+$("#clearMarks").onclick=()=>{for(const k in HL)delete HL[k];renderScale();queueProgressSave();};
+$("#newSession").onclick=startNewMarkingSession;
 $("#summaryPanel").onclick=e=>{
   const toggle=e.target.closest("#summaryToggle");
   if(toggle){
     summaryCollapsed=!summaryCollapsed;
     renderSpeakingSummary();
+    queueProgressSave();
     return;
   }
   const bandBtn=e.target.closest("[data-summary-band]");
@@ -716,6 +803,7 @@ $("#summaryPanel").onclick=e=>{
   if(!btn)return;
   summaryCrit=btn.dataset.summaryCrit;
   renderSpeakingSummary();
+  queueProgressSave();
   requestAnimationFrame(()=>requestAnimationFrame(()=>jumpToCriterion(summaryCrit)));
 };
 
@@ -1018,10 +1106,12 @@ function setExplorerScore(sec,criterion,band){
   if(!state||!(criterion in state))return;
   state[criterion]=state[criterion]===band?null:band;
   refreshExplorerScoreUI();
+  queueProgressSave();
 }
 function clearExplorerScores(sec){
   Object.keys(explorerScores[sec]).forEach(criterion=>explorerScores[sec][criterion]=null);
   refreshExplorerScoreUI();
+  queueProgressSave();
 }
 function clearDescriptorSearchVisuals(){
   if(globalThis.CSS?.highlights){
@@ -1192,6 +1282,7 @@ function saveBullet(btxt){
     delete HL[key];
     btxt.innerHTML=diffHTML(btxt.textContent);
   }
+  queueProgressSave();
 }
 function flatten(mk){ mk.querySelectorAll("mark.hl").forEach(inner=>{const p=inner.parentNode;while(inner.firstChild)p.insertBefore(inner.firstChild,inner);p.removeChild(inner);}); }
 function unwrap(mk){const p=mk.parentNode;while(mk.firstChild)p.insertBefore(mk.firstChild,mk);p.removeChild(mk);}
@@ -1325,7 +1416,9 @@ $("#scale").addEventListener("contextmenu",e=>{
 
 /* ===== CALCULATOR ===== */
 const SKILLS=["Listening","Reading","Writing","Speaking"];
-const skillVal={Listening:6,Reading:6,Writing:6,Speaking:6};
+const skillVal=Object.fromEntries(SKILLS.map(skill=>[
+  skill,savedBand(SAVED_PROGRESS.calculator?.skillVal?.[skill],6)
+]));
 const LEVELS=[
  {test:a=>a<4.0, name:"—", cefr:"Không xét · not classified", color:"#8a93a6",
   vi:"Không xét khi sử dụng định dạng đề thi này (điểm trung bình dưới 4,0).",
@@ -1351,6 +1444,7 @@ function buildSkills(){
     </div>`).join("");
   $$('#skills input[type=range]').forEach(r=>r.oninput=()=>{
     skillVal[r.dataset.skill]=+r.value;$("#v-"+r.dataset.skill).textContent=fmt(+r.value);compute();
+    queueProgressSave();
   });
 }
 const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
@@ -1363,8 +1457,11 @@ const SPEAKING_RAW_LEVELS=[
   {level:"L5",cefr:"C1",rawLabel:"43-50",converted:"8.5-10.0",note:"Level 5 pass range",cls:"band-c1",minRaw:43,maxRaw:50,minBand:8.5,maxBand:10}
 ];
 const prodState={
-  Speaking:{criteria:DATA.speaking_short.map(()=>6)},
-  Writing:{task1:WRITING.map(()=>6),task2:WRITING.map(()=>6)}
+  Speaking:{criteria:DATA.speaking_short.map((_,i)=>savedBand(SAVED_PROGRESS.calculator?.prodState?.Speaking?.criteria?.[i],6,{whole:true}))},
+  Writing:{
+    task1:WRITING.map((_,i)=>savedBand(SAVED_PROGRESS.calculator?.prodState?.Writing?.task1?.[i],6,{whole:true})),
+    task2:WRITING.map((_,i)=>savedBand(SAVED_PROGRESS.calculator?.prodState?.Writing?.task2?.[i],6,{whole:true}))
+  }
 };
 
 function setSkillScore(skill,value){
@@ -1373,6 +1470,7 @@ function setSkillScore(skill,value){
   const range=$(`#skills input[data-skill="${skill}"]`);
   if(range)range.value=value;
   compute();
+  queueProgressSave();
 }
 function criterionRows(labels,values,group){
   return labels.map((label,i)=>`
@@ -1453,10 +1551,12 @@ function renderProductiveCalc(){
     else prodState.Writing[group][i]=val;
     r.closest(".mini").querySelector(".mv").textContent=fmt(val);
     updateProductiveResult();
+    queueProgressSave();
   });
   updateProductiveResult();
 }
-$("#prodSkill").onchange=renderProductiveCalc;
+if(["Speaking","Writing"].includes(SAVED_PROGRESS.calculator?.prodSkill))$("#prodSkill").value=SAVED_PROGRESS.calculator.prodSkill;
+$("#prodSkill").onchange=()=>{renderProductiveCalc();queueProgressSave();};
 
 function buildGauge(){
   // visual zones by official ranges (with neutral gaps)
@@ -1484,10 +1584,17 @@ function compute(){
 }
 
 /* init */
-refreshFocus();renderSpeakingSummary();ruler();syncDiffLegend();renderScale();
+refreshFocus();
+if([...$("#focusCrit").options].some(option=>option.value===SAVED_PROGRESS.focusCrit))$("#focusCrit").value=SAVED_PROGRESS.focusCrit;
+renderSpeakingSummary();ruler();syncDiffLegend();renderScale();
+syncHighlightMode({render:false});
 buildSkills();
 renderProductiveCalc();
 buildGauge();compute();
+if(SAVED_PROGRESS.activeTab==="calc")document.querySelector('.tab[data-tab="calc"]')?.click();
+window.addEventListener("pagehide",persistAppProgress);
+window.addEventListener("beforeunload",persistAppProgress);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persistAppProgress();});
 </script>
 </body>
 </html>
