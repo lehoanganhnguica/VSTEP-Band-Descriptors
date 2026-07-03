@@ -235,6 +235,13 @@
   .skill input[type=range]{width:100%;accent-color:var(--brand);margin-top:6px}
   .productive-card label.fld{min-width:168px}
   .calc-info{font-size:13px;color:var(--muted);background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+  .cut-score-strip{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 12px}
+  .cut-score-title{font-size:11.5px;font-weight:900;text-transform:uppercase;letter-spacing:.35px;color:#33445f}
+  .cut-score-card{display:inline-flex;align-items:baseline;gap:5px;border:1px solid var(--lvl-border);border-radius:999px;background:var(--lvl-bg);color:var(--lvl-ink);padding:5px 9px;font-size:12px;font-weight:850;line-height:1.2}
+  .cut-score-card b{font-size:13px}
+  .cut-score-card .cut-score-value{color:#172033;font-weight:950}
+  .cut-score-card .cut-score-note{color:var(--muted);font-size:10.5px;font-weight:800}
+  .cut-score-card.active{box-shadow:inset 0 0 0 2px var(--lvl-solid)}
   .task-block{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel2);margin-top:10px}
   .task-block h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
   .mini{display:grid;grid-template-columns:minmax(120px,1fr) minmax(130px,1.6fr) 44px;align-items:center;gap:10px;margin:8px 0;font-size:14px}
@@ -244,7 +251,9 @@
   .prod-result strong{font-size:38px;line-height:1;color:var(--brand)}
   .prod-result .detail{grid-column:1/-1;font-size:13px;color:var(--muted)}
   .prod-result .btn{grid-column:1/-1;justify-self:start;margin-top:2px}
+  .raw-conv-wrap{grid-column:1/-1;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
   table.raw-conv{grid-column:1/-1;border-collapse:collapse;width:100%;font-size:12px;margin-top:4px}
+  .raw-conv-wrap table.raw-conv{min-width:560px}
   table.raw-conv th,table.raw-conv td{border:1px solid var(--line);padding:7px 8px;text-align:left}
   table.raw-conv th{background:#e8eefb;color:#3a465f;text-transform:uppercase;letter-spacing:.3px}
   table.raw-conv tr td:first-child{font-weight:850;color:var(--lvl-ink,var(--brand))}
@@ -1025,10 +1034,15 @@ function writingExplorerResult(){
   const task1=selectedScores("Writing Task 1");
   const task2=selectedScores("Writing Task 2");
   if(task1.some(v=>v===null)||task2.some(v=>v===null))return null;
-  const task1Raw=avg(task1);
-  const task2Raw=avg(task2);
-  const raw=(task1Raw+2*task2Raw)/3;
-  return {task1Raw,task2Raw,raw,band:round5(raw)};
+  const task1Total=sum(task1);
+  const task2Total=sum(task2);
+  const task1Raw=task1Total/4;
+  const task2Raw=task2Total/4;
+  const rawTotal=(task1Total+2*task2Total)/3;
+  const raw=rawTotal/4;
+  const rawLevel=writingRawLevel(rawTotal);
+  const band=clamp(round5(raw),rawLevel.minBand,rawLevel.maxBand);
+  return {task1Raw,task2Raw,task1Total,task2Total,rawTotal,raw,rawLevel,band};
 }
 function explorerScoreStatus(sec){
   const values=selectedScores(sec);
@@ -1047,7 +1061,7 @@ function explorerScoreStatus(sec){
     const level=compactScoreLevel(band);
     return {
       cls:level.cls,label:"Speaking",main:`${rawTotal}/50`,detail:`${fmt(band)} · ${level.label}`,
-      title:`Speaking total ${rawTotal}/50. Converted score ${fmt(band)}. ${level.label}.`
+      title:`Speaking total ${rawTotal}/50. Cut scores: B1 20, B2 30, C1 43. Converted score ${fmt(band)}. ${level.label}.`
     };
   }
   if(sec!=="Speaking"&&complete){
@@ -1058,7 +1072,7 @@ function explorerScoreStatus(sec){
       const level=compactScoreLevel(writing.band);
       return {
         cls:level.cls,label:"Writing",main:`${taskTotal}/40`,detail:`W ${fmt(writing.band)} · ${level.label}`,
-        title:`${sec} total ${taskTotal}/40. Task 1 average ${writing.task1Raw.toFixed(2)}, Task 2 average ${writing.task2Raw.toFixed(2)}. Weighted Writing score ${fmt(writing.band)}. ${level.label}.`
+        title:`${sec} total ${taskTotal}/40. Task 1 total ${writing.task1Total}/40, Task 2 total ${writing.task2Total}/40. Weighted Writing raw total ${writing.rawTotal.toFixed(2)}/40. Cut scores: B1 16, B2 24, C1 34. Weighted Writing score ${fmt(writing.band)}. ${level.label}.`
       };
     }
     return {
@@ -1457,10 +1471,16 @@ const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const SPEAKING_RAW_LEVELS=[
-  {level:"Unrated / fail",cefr:"—",rawLabel:"0-19",converted:"< 4.0",note:"Below Level 3",cls:"band-unrated",minRaw:0,maxRaw:19,minBand:0,maxBand:3.5},
-  {level:"L3",cefr:"B1",rawLabel:"20-29",converted:"4.0-5.5",note:"Level 3 pass range",cls:"band-b1",minRaw:20,maxRaw:29,minBand:4,maxBand:5.5},
-  {level:"L4",cefr:"B2",rawLabel:"30-42",converted:"6.0-8.0",note:"Level 4 pass range",cls:"band-b2",minRaw:30,maxRaw:42,minBand:6,maxBand:8},
-  {level:"L5",cefr:"C1",rawLabel:"43-50",converted:"8.5-10.0",note:"Level 5 pass range",cls:"band-c1",minRaw:43,maxRaw:50,minBand:8.5,maxBand:10}
+  {level:"Unrated / fail",cefr:"—",cut:null,rawLabel:"0-19",converted:"< 4.0",note:"Below Level 3",cls:"band-unrated",minRaw:0,maxRaw:19,minBand:0,maxBand:3.5},
+  {level:"L3",cefr:"B1",cut:20,rawLabel:"20-29",converted:"4.0-5.5",note:"B1 cut score",cls:"band-b1",minRaw:20,maxRaw:29,minBand:4,maxBand:5.5},
+  {level:"L4",cefr:"B2",cut:30,rawLabel:"30-42",converted:"6.0-8.0",note:"B2 cut score",cls:"band-b2",minRaw:30,maxRaw:42,minBand:6,maxBand:8},
+  {level:"L5",cefr:"C1",cut:43,rawLabel:"43-50",converted:"8.5-10.0",note:"C1 cut score",cls:"band-c1",minRaw:43,maxRaw:50,minBand:8.5,maxBand:10}
+];
+const WRITING_RAW_LEVELS=[
+  {level:"Unrated / fail",cefr:"—",cut:null,rawLabel:"0-<16",converted:"< 4.0",note:"Below Level 3",cls:"band-unrated",minBand:0,maxBand:3.5},
+  {level:"L3",cefr:"B1",cut:16,rawLabel:"16-<24",converted:"4.0-5.5",note:"B1 cut score",cls:"band-b1",minBand:4,maxBand:5.5},
+  {level:"L4",cefr:"B2",cut:24,rawLabel:"24-<34",converted:"6.0-8.0",note:"B2 cut score",cls:"band-b2",minBand:6,maxBand:8},
+  {level:"L5",cefr:"C1",cut:34,rawLabel:"34-40",converted:"8.5-10.0",note:"C1 cut score",cls:"band-c1",minBand:8.5,maxBand:10}
 ];
 const prodState={
   Speaking:{criteria:DATA.speaking_short.map((_,i)=>savedBand(SAVED_PROGRESS.calculator?.prodState?.Speaking?.criteria?.[i],6,{whole:true}))},
@@ -1489,18 +1509,38 @@ function criterionRows(labels,values,group){
 function speakingRawLevel(rawTotal){
   return SPEAKING_RAW_LEVELS.find(level=>rawTotal>=level.minRaw&&rawTotal<=level.maxRaw) || SPEAKING_RAW_LEVELS[0];
 }
-function speakingRawTable(activeLevel){
-  return `<table class="raw-conv">
-    <thead><tr><th>Outcome</th><th>Raw total</th><th>Converted score</th><th>Rule</th></tr></thead>
-    <tbody>${SPEAKING_RAW_LEVELS.map(level=>`
+function writingRawLevel(rawTotal){
+  if(rawTotal<16)return WRITING_RAW_LEVELS[0];
+  if(rawTotal<24)return WRITING_RAW_LEVELS[1];
+  if(rawTotal<34)return WRITING_RAW_LEVELS[2];
+  return WRITING_RAW_LEVELS[3];
+}
+function cutScoreStrip(skill,activeLevel){
+  const levels=skill==="Speaking"?SPEAKING_RAW_LEVELS:WRITING_RAW_LEVELS;
+  const max=skill==="Speaking"?50:40;
+  return `<div class="cut-score-strip" aria-label="${skill} cut scores">
+    <span class="cut-score-title">${skill} cut scores</span>
+    ${levels.filter(level=>level.cut!==null).map(level=>`
+      <span class="cut-score-card ${level.cls} ${level===activeLevel?"active":""}">
+        <b>${level.cefr}</b><span class="cut-score-value">≥${level.cut}/${max}</span><span class="cut-score-note">${level.level}</span>
+      </span>`).join("")}
+  </div>`;
+}
+function rawLevelTable(levels,activeLevel,maxRaw){
+  return `<div class="raw-conv-wrap"><table class="raw-conv">
+    <thead><tr><th>Outcome</th><th>Cut score</th><th>Raw total</th><th>Converted score</th><th>Rule</th></tr></thead>
+    <tbody>${levels.map(level=>`
       <tr class="${level.cls} ${level===activeLevel?"active":""}">
         <td>${level.level} (${level.cefr})</td>
+        <td>${level.cut===null?"—":`≥${level.cut}/${maxRaw}`}</td>
         <td>${level.rawLabel}</td>
         <td>${level.converted}</td>
         <td>${level.note}</td>
       </tr>`).join("")}</tbody>
-  </table>`;
+  </table></div>`;
 }
+function speakingRawTable(activeLevel){return rawLevelTable(SPEAKING_RAW_LEVELS,activeLevel,50);}
+function writingRawTable(activeLevel){return rawLevelTable(WRITING_RAW_LEVELS,activeLevel,40);}
 function productiveResult(mode){
   if(mode==="Speaking"){
     const rawTotal=sum(prodState.Speaking.criteria);
@@ -1509,15 +1549,20 @@ function productiveResult(mode){
     const band=clamp(round5(raw),level.minBand,level.maxBand);
     return {
       mode,skill:"Speaking",raw,band,
-      detail:`Five Speaking criteria are summed out of 50. Raw total ${rawTotal}/50 maps to ${level.level}${level.cefr==="—"?"":` (${level.cefr})`} raw range ${level.rawLabel}; converted score range ${level.converted}.`,
+      detail:`Five Speaking criteria are summed out of 50. Raw total ${rawTotal}/50 maps to ${level.level}${level.cefr==="—"?"":` (${level.cefr})`} using cut scores B1 20, B2 30, C1 43. Converted score range ${level.converted}.`,
       extra:speakingRawTable(level)
     };
   }
-  const t1Raw=avg(prodState.Writing.task1), t2Raw=avg(prodState.Writing.task2);
-  const raw=(t1Raw+2*t2Raw)/3;
+  const t1Total=sum(prodState.Writing.task1), t2Total=sum(prodState.Writing.task2);
+  const t1Raw=t1Total/4, t2Raw=t2Total/4;
+  const rawTotal=(t1Total+2*t2Total)/3;
+  const raw=rawTotal/4;
+  const level=writingRawLevel(rawTotal);
+  const band=clamp(round5(raw),level.minBand,level.maxBand);
   return {
-    mode,skill:"Writing",raw,band:round5(raw),
-    detail:`Task 1 raw ${t1Raw.toFixed(2)} (1/3) + Task 2 raw ${t2Raw.toFixed(2)} (2/3). Weighted raw: ${raw.toFixed(2)}.`
+    mode,skill:"Writing",raw,band,
+    detail:`Task 1 total ${t1Total}/40 (avg ${t1Raw.toFixed(2)}) + Task 2 total ${t2Total}/40 (avg ${t2Raw.toFixed(2)}), weighted 1:2. Weighted raw total ${rawTotal.toFixed(2)}/40 maps to ${level.level}${level.cefr==="—"?"":` (${level.cefr})`} using cut scores B1 16, B2 24, C1 34. Converted score range ${level.converted}.`,
+    extra:writingRawTable(level)
   };
 }
 function updateProductiveResult(){
@@ -1534,13 +1579,15 @@ function updateProductiveResult(){
 function renderProductiveCalc(){
   const mode=$("#prodSkill").value;
   const html=mode==="Speaking"?`
-    <div class="calc-info"><b>Speaking rating rule from the Vuong rater training PDF:</b> score the 5 criteria as whole raw bands from 0-10, sum them out of 50, then classify the raw total as Level 3 = 20-29, Level 4 = 30-42, Level 5 = 43-50. Totals below 20 are unrated/fail. The converted skill score is rounded to the nearest 0.5 and constrained to that level range.</div>
+    <div class="calc-info"><b>Speaking cut scores:</b> B1 starts at 20/50, B2 at 30/50, and C1 at 43/50. Score the 5 criteria as whole raw bands from 0-10; the converted skill score is rounded to the nearest 0.5 and constrained to the level range.</div>
+    ${cutScoreStrip("Speaking")}
     <div class="task-block">
       <h4>Speaking criteria</h4>
       ${criterionRows(DATA.speaking_short,prodState.Speaking.criteria,"criteria")}
     </div>
     <div class="prod-result" id="prodResult"></div>`:`
-    <div class="calc-info">Score each Writing criterion as a whole band from 0-10. Task 1 contributes one third and Task 2 contributes two thirds; the final Writing skill band is rounded to the nearest 0.5.</div>
+    <div class="calc-info"><b>Writing cut scores:</b> B1 starts at 16/40, B2 at 24/40, and C1 at 34/40. Score each Writing criterion as a whole band from 0-10; Task 1 contributes one third and Task 2 contributes two thirds.</div>
+    ${cutScoreStrip("Writing")}
     <div class="task-block">
       <h4>Writing Task 1</h4>
       ${criterionRows(WRITING,prodState.Writing.task1,"task1")}
